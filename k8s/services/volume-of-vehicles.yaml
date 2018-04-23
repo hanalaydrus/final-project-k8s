@@ -1,0 +1,154 @@
+# Service setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: volume-service
+  labels:
+    name: volume-service
+spec:
+  ports:
+    - port: 50051
+  selector:
+    name: volume-service
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: volume-service
+  labels:
+    name: volume-service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: volume-service
+    spec:
+      containers:
+      - name: volume-service
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-volume-of-vehicles-cpp:fa194916966ba949c506d1f528153d5e2e9503fd
+        env:
+        - name : DB_HOST
+          value : "db-volume"
+        - name : DB_PORT
+          value : "3306"
+        - name : DB_NAME
+          value : "volume"
+        - name : DB_ROOT_PASS
+          value : "root"
+        - name : CAMERA_HOST
+          value : "camera-service"
+        - name : CAMERA_PORT
+          value : "50052"
+
+      restartPolicy: Always
+---
+# Database setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-volume
+  labels:
+    app: db-volume
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: db-volume
+    tier: db
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: volume-pv-claim
+  labels:
+    app: db-volume
+spec:
+  storageClassName: db-volume
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: db-volume
+  labels:
+    app: db-volume
+    tier: db
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: db-volume
+        tier: db
+    spec:
+      containers:
+      - image: mariadb:10.3
+        name: db-volume
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        - name : MYSQL_DATABASE
+          value : density
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: density-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: density-persistent-storage
+        persistentVolumeClaim:
+          claimName: volume-pv-claim
+---
+# Phpmyadmin
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin-density
+  labels:
+    app: phpmyadmin-density
+spec:
+  ports:
+    - port: 9001
+      targetPort: 80
+  selector:
+    app: phpmyadmin-density
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: phpmyadmin-density
+  labels:
+    app: phpmyadmin-density
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin-density
+    spec:
+      containers:
+      - name: phpmyadmin-density
+        image: phpmyadmin/phpmyadmin
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        - name: PMA_HOST
+          value: db-volume:3306
+        ports:
+        - name: http-phpmyadmin-density
+          containerPort: 80
+        
+      restartPolicy: Always
