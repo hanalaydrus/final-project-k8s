@@ -1,28 +1,154 @@
-# Service setup
+# Database setup
 apiVersion: v1
 kind: Service
 metadata:
-  name: density-service
-  namespace: density
+  name: db-density
+  labels:     
+    group: density
 spec:
   ports:
-    - port: 50050
+    - port: 3306
   selector:
-    name: density-service
+    group: density
+    tier: db
+  clusterIP: None
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: storage-density
+  labels:     
+    group: density
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: density-pv
+  labels:     
+    group: density
+spec:
+  storageClassName: db-density
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: storage-density
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: density-service
-  namespace: density
+  name: db-density
+  labels:     
+    group: density
+    tier: db
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:     
+        group: density
+        tier: db
+    spec:
+      containers:
+      - image: asia.gcr.io/tugas-akhir-hana/mariadb-density:test
+        name: db-density
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: density-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: density-persistent-storage
+        persistentVolumeClaim:
+          claimName: density-pv
+---
+# Phpmyadmin
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin-density
+  labels:     
+    group: density
+    tier: phpmyadmin
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    group: density
+    tier: phpmyadmin
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: phpmyadmin-density
+  labels:     
+    group: density
+    tier: phpmyadmin
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   template:
     metadata:
-      name: density-service
-      namespace: density
+      labels:     
+        group: density
+        tier: phpmyadmin
+    spec:
+      containers:
+      - name: phpmyadmin-density
+        image: phpmyadmin/phpmyadmin
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        - name: PMA_HOST
+          value: db-density:3306
+        ports:
+        - name: http-padmn-den
+          containerPort: 80
+  
+      restartPolicy: Always
+---
+# Service setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: density-service
+  labels:
+    group: density
+spec:
+  ports:
+    - port: 50050
+  selector:
+    name: density-service
+    tier: service
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: density-service
+  labels:
+    group: density
+    tier: service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        group: density
+        tier: service
     spec:
       containers:
       - name: density-service
@@ -41,117 +167,4 @@ spec:
         - name : CAMERA_PORT
           value : "50052"
 
-      restartPolicy: Always
----
-# Database setup
-apiVersion: v1
-kind: Service
-metadata:
-  name: db-density
-  namespace: density
-spec:
-  ports:
-    - port: 3306
-  selector:
-    name: db-density
-    tier: db
-  clusterIP: None
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: storage-density
-  namespace: density
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: density-pv
-  namespace: density
-spec:
-  storageClassName: db-density
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
-  storageClassName: storage-density
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: db-density
-  namespace: density
-  tier: db
-spec:
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      name: db-density
-      namespace: density
-      tier: db
-    spec:
-      containers:
-      - image: mariadb:10.3
-        name: db-density
-        env:
-        - name : MYSQL_ROOT_PASSWORD
-          value : root
-        - name : MYSQL_DATABASE
-          value : density
-        ports:
-        - containerPort: 3306
-          name: mysql
-        volumeMounts:
-        - name: density-persistent-storage
-          mountPath: /var/lib/mysql
-      volumes:
-      - name: density-persistent-storage
-        persistentVolumeClaim:
-          claimName: density-pv
----
-# Phpmyadmin
-apiVersion: v1
-kind: Service
-metadata:
-  name: phpmyadmin-density
-  namespace: density
-spec:
-  ports:
-    - port: 80
-      targetPort: 80
-  selector:
-    name: phpmyadmin-density
-  type: LoadBalancer
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: phpmyadmin-density
-  namespace: density
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      name: phpmyadmin-density
-      namespace: density
-    spec:
-      containers:
-      - name: phpmyadmin-density
-        image: phpmyadmin/phpmyadmin
-        env:
-        - name : MYSQL_ROOT_PASSWORD
-          value : root
-        - name: PMA_HOST
-          value: db-density:3306
-        ports:
-        - name: http-phpmyadmin-density
-          containerPort: 80
-  
       restartPolicy: Always
