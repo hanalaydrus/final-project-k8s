@@ -1,28 +1,154 @@
-# Service setup
+# Database setup
 apiVersion: v1
 kind: Service
 metadata:
-  name: volume-service
-  namespace: volume
+  name: db-volume
+  labels:     
+    group: volume
 spec:
   ports:
-    - port: 50051
+    - port: 3306
   selector:
-    name: volume-service
+    group: volume
+    tier: db
+  clusterIP: None
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: storage-volume
+  labels:     
+    group: volume
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: volume-pv
+  labels:     
+    group: volume
+spec:
+  storageClassName: db-volume
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: storage-volume
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: volume-service
-  namespace: volume
+  name: db-volume
+  labels:
+    group: volume
+    tier: db
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:     
+        group: volume
+        tier: db
+    spec:
+      containers:
+      - image: asia.gcr.io/tugas-akhir-hana/mariadb-volume:latest
+        name: db-volume
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: volume-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: volume-persistent-storage
+        persistentVolumeClaim:
+          claimName: volume-pv
+---
+# Phpmyadmin
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin-volume
+  labels:     
+    group: volume
+    tier: phpmyadmin
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    group: volume
+    tier: phpmyadmin
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: phpmyadmin-volume
+  labels:     
+    group: volume
+    tier: phpmyadmin
 spec:
   replicas: 1
   strategy:
     type: RollingUpdate
   template:
     metadata:
-      name: volume-service
-      namespace: volume
+      labels:     
+        group: volume
+        tier: phpmyadmin
+    spec:
+      containers:
+      - name: phpmyadmin-volume
+        image: phpmyadmin/phpmyadmin
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        - name: PMA_HOST
+          value: db-volume:3306
+        ports:
+        - name: http-padmn-vol
+          containerPort: 80
+  
+      restartPolicy: Always
+---
+# Service setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: volume-service
+  labels:
+    group: volume
+spec:
+  ports:
+    - port: 50051
+  selector:
+    group: volume
+    tier: service
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: volume-service
+  labels:
+    group: volume
+    tier: service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        group: volume
+        tier: service
     spec:
       containers:
       - name: volume-service
@@ -41,117 +167,4 @@ spec:
         - name : CAMERA_PORT
           value : "50052"
 
-      restartPolicy: Always
----
-# Database setup
-apiVersion: v1
-kind: Service
-metadata:
-  name: db-volume
-  namespace: volume
-spec:
-  ports:
-    - port: 3306
-  selector:
-    name: db-volume
-    tier: db
-  clusterIP: None
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: storage-volume
-  namespace: volume
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: volume-pv
-  namespace: volume
-spec:
-  storageClassName: db-volume
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
-  storageClassName: storage-volume
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: db-volume
-  namespace: volume
-  tier: db
-spec:
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      name: db-volume
-      namespace: volume
-      tier: db
-    spec:
-      containers:
-      - image: mariadb:10.3
-        name: db-volume
-        env:
-        - name : MYSQL_ROOT_PASSWORD
-          value : root
-        - name : MYSQL_DATABASE
-          value : volume
-        ports:
-        - containerPort: 3306
-          name: mysql
-        volumeMounts:
-        - name: volume-persistent-storage
-          mountPath: /var/lib/mysql
-      volumes:
-      - name: volume-persistent-storage
-        persistentVolumeClaim:
-          claimName: volume-pv
----
-# Phpmyadmin
-apiVersion: v1
-kind: Service
-metadata:
-  name: phpmyadmin-volume
-  namespace: volume
-spec:
-  ports:
-    - port: 80
-      targetPort: 80
-  selector:
-    name: phpmyadmin-volume
-  type: LoadBalancer
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: phpmyadmin-volume
-  namespace: volume
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      name: phpmyadmin-volume
-      namespace: volume
-    spec:
-      containers:
-      - name: phpmyadmin-volume
-        image: phpmyadmin/phpmyadmin
-        env:
-        - name : MYSQL_ROOT_PASSWORD
-          value : root
-        - name: PMA_HOST
-          value: db-volume:3306
-        ports:
-        - name: http-phpmyadmin-volume
-          containerPort: 80
-  
       restartPolicy: Always

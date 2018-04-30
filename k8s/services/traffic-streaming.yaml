@@ -1,0 +1,68 @@
+# Service setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: traffic-streaming-service
+  labels:
+    group: traffic-streaming
+    tier: service
+spec:
+  ports:
+    - name: camera-1
+      port: 5001
+      targetPort: 5001
+    - name: camera-2
+      port: 5002
+      targetPort: 5002
+    - name: camera-3
+      port: 5003
+      targetPort: 5003
+    - name: camera-4
+      port: 5004
+      targetPort: 5004
+    - name: camera-5
+      port: 5005
+      targetPort: 5005
+    - name: camera-6
+      port: 5006
+      targetPort: 5006
+  selector:
+    group: traffic-streaming
+    tier: service
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: traffic-streaming-service
+  labels:
+    group: traffic-streaming
+    tier: service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        group: traffic-streaming
+        tier: service
+    spec:
+      containers:
+      - name: traffic-streaming-service
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-traffic-streaming:aab6ccc2e2e5095354c7c30ae580771019d42948
+        ports:
+        - name: camera-1
+          containerPort: 5001
+        - name: camera-2
+          containerPort: 5002
+        - name: camera-3
+          containerPort: 5003
+        - name: camera-4
+          containerPort: 5004
+        - name: camera-5
+          containerPort: 5005
+        - name: camera-6
+          containerPort: 5006
+
+      restartPolicy: Always

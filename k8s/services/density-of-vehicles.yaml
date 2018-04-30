@@ -42,7 +42,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: db-density
-  labels:     
+  labels:
     group: density
     tier: db
 spec:
@@ -55,7 +55,7 @@ spec:
         tier: db
     spec:
       containers:
-      - image: asia.gcr.io/tugas-akhir-hana/mariadb-density:test
+      - image: asia.gcr.io/tugas-akhir-hana/mariadb-density:latest
         name: db-density
         env:
         - name : MYSQL_ROOT_PASSWORD
@@ -130,7 +130,7 @@ spec:
   ports:
     - port: 50050
   selector:
-    name: density-service
+    group: density
     tier: service
 ---
 apiVersion: extensions/v1beta1

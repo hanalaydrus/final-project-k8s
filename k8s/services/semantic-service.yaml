@@ -1,0 +1,36 @@
+# Service setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: semantic-service
+  labels:
+    group: semantic
+spec:
+  ports:
+    - port: 50049
+  selector:
+    group: semantic
+    tier: service
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: semantic-service
+  labels:
+    group: semantic
+    tier: service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        group: semantic
+        tier: service
+    spec:
+      containers:
+      - name: semantic-service
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-semantic:43b6cd79e31f0ac049169a1d737bb04f2de8dc73
+
+      restartPolicy: Always

@@ -1,0 +1,171 @@
+# Database setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-camera
+  labels:     
+    group: camera
+spec:
+  ports:
+    - port: 3306
+  selector:
+    group: camera
+    tier: db
+  clusterIP: None
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: storage-camera
+  labels:     
+    group: camera
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: camera-pv
+  labels:     
+    group: camera
+spec:
+  storageClassName: db-camera
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: storage-camera
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: db-camera
+  labels:
+    group: camera
+    tier: db
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:     
+        group: camera
+        tier: db
+    spec:
+      containers:
+      - image: asia.gcr.io/tugas-akhir-hana/mariadb-camera:latest
+        name: db-camera
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: camera-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: camera-persistent-storage
+        persistentVolumeClaim:
+          claimName: camera-pv
+---
+# Phpmyadmin
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin-camera
+  labels:     
+    group: camera
+    tier: phpmyadmin
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    group: camera
+    tier: phpmyadmin
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: phpmyadmin-camera
+  labels:     
+    group: camera
+    tier: phpmyadmin
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:     
+        group: camera
+        tier: phpmyadmin
+    spec:
+      containers:
+      - name: phpmyadmin-camera
+        image: phpmyadmin/phpmyadmin
+        env:
+        - name : MYSQL_ROOT_PASSWORD
+          value : root
+        - name: PMA_HOST
+          value: db-camera:3306
+        ports:
+        - name: http-padmn-cam
+          containerPort: 80
+  
+      restartPolicy: Always
+---
+# Service setup
+apiVersion: v1
+kind: Service
+metadata:
+  name: camera-service
+  labels:
+    group: camera
+spec:
+  ports:
+    - port: 50052
+      # targetPort: 50052
+  selector:
+    group: camera
+    tier: service
+  # type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: camera-service
+  labels:
+    group: camera
+    tier: service
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        group: camera
+        tier: service
+    spec:
+      containers:
+      - name: camera-service
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-camera-service:966d00410edb8140496c552e7a3fefaafbd099fd
+        env:
+        - name : DB_HOST
+          value : "db-camera"
+        - name : DB_PORT
+          value : "3306"
+        - name : DB_NAME
+          value : "camera"
+        - name : DB_ROOT_PASS
+          value : "root"
+        # ports:
+        # - name: http-cam
+        #   containerPort: 50052
+
+      restartPolicy: Always
