@@ -152,7 +152,7 @@ spec:
     spec:
       containers:
       - name: volume-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-volume-of-vehicles-cpp:fa194916966ba949c506d1f528153d5e2e9503fd
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-volume-of-vehicles-cpp:latest
         env:
         - name : DB_HOST
           value : "db-volume"

@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-api-gateway:86f109479ef62972d84e437b10b86bf926afe82d
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-api-gateway:latest
         ports:
         - name: http-api-gtwy
           containerPort: 8080

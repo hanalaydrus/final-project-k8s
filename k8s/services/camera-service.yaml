@@ -129,11 +129,11 @@ metadata:
 spec:
   ports:
     - port: 50052
-      # targetPort: 50052
+      targetPort: 50052
   selector:
     group: camera
     tier: service
-  # type: LoadBalancer
+  type: LoadBalancer
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -154,7 +154,7 @@ spec:
     spec:
       containers:
       - name: camera-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-camera-service:966d00410edb8140496c552e7a3fefaafbd099fd
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-camera-service:latest
         env:
         - name : DB_HOST
           value : "db-camera"
@@ -164,8 +164,8 @@ spec:
           value : "camera"
         - name : DB_ROOT_PASS
           value : "root"
-        # ports:
-        # - name: http-cam
-        #   containerPort: 50052
+        ports:
+        - name: http-cam
+          containerPort: 50052
 
       restartPolicy: Always

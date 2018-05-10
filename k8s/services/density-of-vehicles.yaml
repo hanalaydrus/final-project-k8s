@@ -152,7 +152,7 @@ spec:
     spec:
       containers:
       - name: density-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-density-of-vehicles:91a2189205470dd90b771c9f16ade09d02097d72
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-density-of-vehicles:latest
         env:
         - name : DB_HOST
           value : "db-density"

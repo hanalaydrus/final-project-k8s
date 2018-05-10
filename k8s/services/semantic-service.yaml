@@ -31,6 +31,6 @@ spec:
     spec:
       containers:
       - name: semantic-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-semantic:43b6cd79e31f0ac049169a1d737bb04f2de8dc73
+        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-semantic:latest
 
       restartPolicy: Always
