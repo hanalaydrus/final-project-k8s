@@ -13,6 +13,7 @@ spec:
     group: api-gateway
     tier: service
   type: LoadBalancer
+  loadBalancerIP: "35.240.195.59"
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -33,7 +34,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-api-gateway:latest
+        image: asia.gcr.io/hana-alaydrus/api-gateway:latest
         ports:
         - name: http-api-gtwy
           containerPort: 8080

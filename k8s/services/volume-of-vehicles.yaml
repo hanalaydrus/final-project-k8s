@@ -55,7 +55,7 @@ spec:
         tier: db
     spec:
       containers:
-      - image: asia.gcr.io/tugas-akhir-hana/mariadb-volume:latest
+      - image: asia.gcr.io/hana-alaydrus/db-volume:latest
         name: db-volume
         env:
         - name : MYSQL_ROOT_PASSWORD
@@ -71,54 +71,54 @@ spec:
         persistentVolumeClaim:
           claimName: volume-pv
 ---
-# Phpmyadmin
-apiVersion: v1
-kind: Service
-metadata:
-  name: phpmyadmin-volume
-  labels:     
-    group: volume
-    tier: phpmyadmin
-spec:
-  ports:
-    - port: 80
-      targetPort: 80
-  selector:
-    group: volume
-    tier: phpmyadmin
-  type: LoadBalancer
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: phpmyadmin-volume
-  labels:     
-    group: volume
-    tier: phpmyadmin
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:     
-        group: volume
-        tier: phpmyadmin
-    spec:
-      containers:
-      - name: phpmyadmin-volume
-        image: phpmyadmin/phpmyadmin
-        env:
-        - name : MYSQL_ROOT_PASSWORD
-          value : root
-        - name: PMA_HOST
-          value: db-volume:3306
-        ports:
-        - name: http-padmn-vol
-          containerPort: 80
+# # Phpmyadmin
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: phpmyadmin-volume
+#   labels:     
+#     group: volume
+#     tier: phpmyadmin
+# spec:
+#   ports:
+#     - port: 80
+#       targetPort: 80
+#   selector:
+#     group: volume
+#     tier: phpmyadmin
+#   type: LoadBalancer
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Deployment
+# metadata:
+#   name: phpmyadmin-volume
+#   labels:     
+#     group: volume
+#     tier: phpmyadmin
+# spec:
+#   replicas: 1
+#   strategy:
+#     type: RollingUpdate
+#   template:
+#     metadata:
+#       labels:     
+#         group: volume
+#         tier: phpmyadmin
+#     spec:
+#       containers:
+#       - name: phpmyadmin-volume
+#         image: phpmyadmin/phpmyadmin
+#         env:
+#         - name : MYSQL_ROOT_PASSWORD
+#           value : root
+#         - name: PMA_HOST
+#           value: db-volume:3306
+#         ports:
+#         - name: http-padmn-vol
+#           containerPort: 80
   
-      restartPolicy: Always
----
+#       restartPolicy: Always
+# ---
 # Service setup
 apiVersion: v1
 kind: Service
@@ -141,9 +141,13 @@ metadata:
     group: volume
     tier: service
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 60
   template:
     metadata:
       labels:
@@ -152,7 +156,7 @@ spec:
     spec:
       containers:
       - name: volume-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-volume-of-vehicles-cpp:latest
+        image: asia.gcr.io/hana-alaydrus/volume-service:latest
         env:
         - name : DB_HOST
           value : "db-volume"

@@ -55,7 +55,7 @@ spec:
         tier: db
     spec:
       containers:
-      - image: asia.gcr.io/tugas-akhir-hana/mariadb-camera:latest
+      - image: asia.gcr.io/hana-alaydrus/db-camera:latest
         name: db-camera
         env:
         - name : MYSQL_ROOT_PASSWORD
@@ -71,54 +71,54 @@ spec:
         persistentVolumeClaim:
           claimName: camera-pv
 ---
-# Phpmyadmin
-apiVersion: v1
-kind: Service
-metadata:
-  name: phpmyadmin-camera
-  labels:     
-    group: camera
-    tier: phpmyadmin
-spec:
-  ports:
-    - port: 80
-      targetPort: 80
-  selector:
-    group: camera
-    tier: phpmyadmin
-  type: LoadBalancer
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: phpmyadmin-camera
-  labels:     
-    group: camera
-    tier: phpmyadmin
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:     
-        group: camera
-        tier: phpmyadmin
-    spec:
-      containers:
-      - name: phpmyadmin-camera
-        image: phpmyadmin/phpmyadmin
-        env:
-        - name : MYSQL_ROOT_PASSWORD
-          value : root
-        - name: PMA_HOST
-          value: db-camera:3306
-        ports:
-        - name: http-padmn-cam
-          containerPort: 80
+# # Phpmyadmin
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: phpmyadmin-camera
+#   labels:     
+#     group: camera
+#     tier: phpmyadmin
+# spec:
+#   ports:
+#     - port: 80
+#       targetPort: 80
+#   selector:
+#     group: camera
+#     tier: phpmyadmin
+#   type: LoadBalancer
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Deployment
+# metadata:
+#   name: phpmyadmin-camera
+#   labels:     
+#     group: camera
+#     tier: phpmyadmin
+# spec:
+#   replicas: 1
+#   strategy:
+#     type: RollingUpdate
+#   template:
+#     metadata:
+#       labels:     
+#         group: camera
+#         tier: phpmyadmin
+#     spec:
+#       containers:
+#       - name: phpmyadmin-camera
+#         image: phpmyadmin/phpmyadmin
+#         env:
+#         - name : MYSQL_ROOT_PASSWORD
+#           value : root
+#         - name: PMA_HOST
+#           value: db-camera:3306
+#         ports:
+#         - name: http-padmn-cam
+#           containerPort: 80
   
-      restartPolicy: Always
----
+#       restartPolicy: Always
+# ---
 # Service setup
 apiVersion: v1
 kind: Service
@@ -133,7 +133,6 @@ spec:
   selector:
     group: camera
     tier: service
-  type: LoadBalancer
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -154,7 +153,7 @@ spec:
     spec:
       containers:
       - name: camera-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-camera-service:latest
+        image: asia.gcr.io/hana-alaydrus/camera-service:latest
         env:
         - name : DB_HOST
           value : "db-camera"

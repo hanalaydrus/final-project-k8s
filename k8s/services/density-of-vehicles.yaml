@@ -55,7 +55,7 @@ spec:
         tier: db
     spec:
       containers:
-      - image: asia.gcr.io/tugas-akhir-hana/mariadb-density:latest
+      - image: asia.gcr.io/hana-alaydrus/db-density:latest
         name: db-density
         env:
         - name : MYSQL_ROOT_PASSWORD
@@ -71,54 +71,54 @@ spec:
         persistentVolumeClaim:
           claimName: density-pv
 ---
-# Phpmyadmin
-apiVersion: v1
-kind: Service
-metadata:
-  name: phpmyadmin-density
-  labels:     
-    group: density
-    tier: phpmyadmin
-spec:
-  ports:
-    - port: 80
-      targetPort: 80
-  selector:
-    group: density
-    tier: phpmyadmin
-  type: LoadBalancer
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: phpmyadmin-density
-  labels:     
-    group: density
-    tier: phpmyadmin
-spec:
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:     
-        group: density
-        tier: phpmyadmin
-    spec:
-      containers:
-      - name: phpmyadmin-density
-        image: phpmyadmin/phpmyadmin
-        env:
-        - name : MYSQL_ROOT_PASSWORD
-          value : root
-        - name: PMA_HOST
-          value: db-density:3306
-        ports:
-        - name: http-padmn-den
-          containerPort: 80
+# # Phpmyadmin
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: phpmyadmin-density
+#   labels:     
+#     group: density
+#     tier: phpmyadmin
+# spec:
+#   ports:
+#     - port: 80
+#       targetPort: 80
+#   selector:
+#     group: density
+#     tier: phpmyadmin
+#   type: LoadBalancer
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Deployment
+# metadata:
+#   name: phpmyadmin-density
+#   labels:     
+#     group: density
+#     tier: phpmyadmin
+# spec:
+#   replicas: 1
+#   strategy:
+#     type: RollingUpdate
+#   template:
+#     metadata:
+#       labels:     
+#         group: density
+#         tier: phpmyadmin
+#     spec:
+#       containers:
+#       - name: phpmyadmin-density
+#         image: phpmyadmin/phpmyadmin
+#         env:
+#         - name : MYSQL_ROOT_PASSWORD
+#           value : root
+#         - name: PMA_HOST
+#           value: db-density:3306
+#         ports:
+#         - name: http-padmn-den
+#           containerPort: 80
   
-      restartPolicy: Always
----
+#       restartPolicy: Always
+# ---
 # Service setup
 apiVersion: v1
 kind: Service
@@ -152,7 +152,7 @@ spec:
     spec:
       containers:
       - name: density-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-density-of-vehicles:latest
+        image: asia.gcr.io/hana-alaydrus/density-service:latest
         env:
         - name : DB_HOST
           value : "db-density"

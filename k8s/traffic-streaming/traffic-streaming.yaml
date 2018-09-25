@@ -14,7 +14,6 @@ spec:
     group: traffic-streaming
     tier: service
   type: LoadBalancer
-  loadBalancerIP: "35.187.247.127"
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -35,7 +34,10 @@ spec:
     spec:
       containers:
       - name: traffic-streaming-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-traffic-streaming:latest
+        #1
+        image: hanalaydrus/traffic-streaming:v1
+        #2
+        # image: asia.gcr.io/tugas-akhir-hana-3/traffic-streaming:latest
         ports:
         - name: http-strmg-cam
           containerPort: 5000

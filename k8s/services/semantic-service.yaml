@@ -3,34 +3,33 @@ apiVersion: v1
 kind: Service
 metadata:
   name: semantic-service
-  labels:
-    group: semantic
 spec:
   ports:
     - port: 50049
   selector:
-    group: semantic
-    tier: service
+    app: semantic
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: semantic-service
-  labels:
-    group: semantic
-    tier: service
 spec:
-  replicas: 1
+  selector:
+    matchLabels:
+      app: semantic
+  replicas: 2
   strategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  minReadySeconds: 60
   template:
     metadata:
       labels:
-        group: semantic
-        tier: service
+        app: semantic
     spec:
       containers:
       - name: semantic-service
-        image: gcr.io/tugas-akhir-hana/github-hanalaydrus-semantic:latest
-
+        image: asia.gcr.io/hana-alaydrus/semantic-service:latest
       restartPolicy: Always
